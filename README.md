@@ -92,10 +92,17 @@ sequenceDiagram
     Claude->>User: Normal response (all processing done)
 ```
 
-**Step 1: Stop Hook (Automatic)**
-- Runs after every Claude response
+**Step 0: PostToolUse Hook (Real-time)**
+- Runs after **each individual tool use**
+- Logs tool activity to `.tool-activity-{session-id}.jsonl`
+- Captures: search queries, file operations, commands, timestamps
+- Builds detailed activity timeline during response
+
+**Step 1: Stop Hook (After Response)**
+- Runs after every Claude response completes
+- Reads tool activity log from PostToolUse hook
 - Creates session file with YAML frontmatter
-- Detects activities: testing, debugging, learning, architecture, refactoring
+- Detects activities from tool log: testing, debugging, learning, architecture, refactoring
 - Extracts stats: conversation turns, tool calls, errors
 - Sets flags: `needs_summary: true`, `needs_consolidation: true`
 
@@ -110,17 +117,27 @@ sequenceDiagram
 - Claude checks for `needs_consolidation: true` after summarization
 - Automatically invokes `/session-memory:consolidate`
 - Reads `activities_detected` from session
+- **Reads tool activity log** for detailed tool usage timeline
 - For each activity, extracts and appends to topic files:
-  - **testing.md** - Test runs, results, lessons
+  - **testing.md** - Test runs, results, lessons (with exact commands)
   - **debugging.md** - Errors, solutions, prevention
-  - **learnings.md** - Research, discoveries, insights
-  - **architecture.md** - New components, design decisions
-  - **patterns.md** - Code patterns, refactoring approaches
+  - **learnings.md** - Research, discoveries, insights (with search queries and timeline)
+  - **architecture.md** - New components, design decisions (with file creation timeline)
+  - **patterns.md** - Code patterns, refactoring approaches (with edit history)
+- Cleans up tool activity log
 - Sets `needs_consolidation: false`
 
 **Result:** Every session is automatically documented, summarized, and consolidated into a searchable knowledge base with zero manual effort.
 
 ## Hook System
+
+### PostToolUse Hook
+- Runs after **every tool use** (WebSearch, Read, Edit, etc.)
+- Captures tool activity in real-time to `.tool-activity-{session-id}.jsonl`
+- Logs: tool name, input, timestamp, activity type
+- Special handling for research (search queries), testing (commands), file operations
+- Provides richer data than transcript parsing alone
+- Enables accurate activity detection and detailed consolidation
 
 ### Stop Hook
 - Runs when Claude finishes responding

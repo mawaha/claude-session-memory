@@ -149,16 +149,21 @@ When this skill is invoked:
    - Else: use current session from `$SESSION_ID`
    - Path: `~/.claude/projects/{project}/memory/sessions/{session-id}.md`
 
-2. **Read session metadata:**
+2. **Read session metadata and tool activity:**
    - Extract `activities_detected` array from YAML frontmatter
    - Extract `timestamp_start` for dating entries
    - Read the session summary sections (Work Done, Decisions Made, etc.)
+   - **Read tool activity log:** `~/.claude/projects/{project}/memory/.tool-activity-{session-id}.jsonl`
+     - Contains real-time tool usage data from PostToolUse hook
+     - Has search queries, file operations, commands, timestamps
+     - More detailed than transcript parsing
 
 3. **For each detected activity, extract and consolidate:**
 
    **If "testing" detected:**
-   - Find test commands in transcript or Work Done
-   - Extract test framework, command, results
+   - Read tool activity log for `activity_type: "testing"` entries
+   - Extract test commands with timestamps (more accurate than transcript)
+   - Extract test framework, command, results from session summary
    - Identify new tests added (from Files Modified + summary)
    - Extract lessons from Notes or Decisions Made
    - Append formatted entry to `testing.md`
@@ -171,11 +176,13 @@ When this skill is invoked:
    - Append formatted entry to `debugging.md`
 
    **If "learning" detected:**
-   - Identify research topic (from summary)
+   - **Read tool activity log** for `activity_type: "research"` entries
+   - Extract search queries with timestamps: `{timestamp: ..., query: "...", url: "..."}`
+   - Identify research topic from search queries and summary
    - Extract key discoveries (from Work Done or Notes)
-   - Find sources (WebSearch results, docs read)
-   - Identify how knowledge was applied
-   - Append formatted entry to `learnings.md`
+   - Map how findings were applied (look for file edits after searches)
+   - Build research timeline from tool log
+   - Append formatted entry to `learnings.md` with full search history
 
    **If "architecture" detected:**
    - Identify new components (from Files Modified)
@@ -205,7 +212,11 @@ When this skill is invoked:
    - Set `needs_consolidation: false` in YAML frontmatter
    - Add note in session indicating consolidation completed
 
-7. **Report completion:**
+7. **Clean up tool activity log:**
+   - Delete `~/.claude/projects/{project}/memory/.tool-activity-{session-id}.jsonl`
+   - Data is now consolidated into topic files, log no longer needed
+
+8. **Report completion:**
    - List which topic files were updated
    - Summarize what was extracted
    - Provide paths to updated files

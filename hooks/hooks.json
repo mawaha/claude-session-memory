@@ -1,6 +1,18 @@
 {
   "description": "Session memory tracking hooks",
   "hooks": {
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/post-tool-use.sh",
+            "timeout": 5,
+            "statusMessage": "Logging tool activity..."
+          }
+        ]
+      }
+    ],
     "Stop": [
       {
         "hooks": [

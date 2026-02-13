@@ -71,34 +71,53 @@ TOOL_CALLS=$(echo "$TRANSCRIPT_STATS" | jq -r '.tool_calls // 0')
 ERRORS=$(echo "$TRANSCRIPT_STATS" | jq -r '.errors // 0')
 TOOLS_USED=$(echo "$TRANSCRIPT_STATS" | jq -r '.tools_used // ""')
 
-# Detect activities for topic file consolidation
+# Read tool activity log from PostToolUse hook
+TOOL_LOG="$MEMORY_DIR/.tool-activity-${SESSION_ID}.jsonl"
+
+# Detect activities using PostToolUse data (richer, more accurate)
 ACTIVITIES="[]"
 
-# Testing activity: test commands found in transcript
-if [ -f "$TRANSCRIPT_PATH" ]; then
+if [ -f "$TOOL_LOG" ]; then
+    # Testing activity: test commands detected
+    if grep -q '"activity_type":"testing"' "$TOOL_LOG" 2>/dev/null; then
+        ACTIVITIES=$(echo "$ACTIVITIES" | jq '. + ["testing"]')
+    fi
+
+    # Learning activity: research tools used
+    if grep -q '"activity_type":"research"' "$TOOL_LOG" 2>/dev/null; then
+        ACTIVITIES=$(echo "$ACTIVITIES" | jq '. + ["learning"]')
+    fi
+
+    # Architecture activity: new files written
+    WRITE_COUNT=$(grep -c '"activity_type":"file_write"' "$TOOL_LOG" 2>/dev/null || echo "0")
+    if [ "$WRITE_COUNT" -gt 2 ]; then
+        ACTIVITIES=$(echo "$ACTIVITIES" | jq '. + ["architecture"]')
+    fi
+
+    # Refactoring activity: heavy editing
+    EDIT_COUNT=$(grep -c '"activity_type":"file_edit"' "$TOOL_LOG" 2>/dev/null || echo "0")
+    if [ "$EDIT_COUNT" -gt 5 ]; then
+        ACTIVITIES=$(echo "$ACTIVITIES" | jq '. + ["refactoring"]')
+    fi
+
+    # Debugging activity: errors encountered
+    if [ "$ERRORS" -gt 0 ]; then
+        ACTIVITIES=$(echo "$ACTIVITIES" | jq '. + ["debugging"]')
+    fi
+fi
+
+# Fallback to transcript analysis if tool log doesn't exist
+if [ ! -f "$TOOL_LOG" ] && [ -f "$TRANSCRIPT_PATH" ]; then
     if grep -qi "pytest\|bats\|npm test\|npm run test\|make test\|cargo test\|go test\|jest" "$TRANSCRIPT_PATH" 2>/dev/null; then
         ACTIVITIES=$(echo "$ACTIVITIES" | jq '. + ["testing"]')
     fi
 
-    # Debugging activity: errors were encountered
-    if [ "$ERRORS" -gt 0 ]; then
-        ACTIVITIES=$(echo "$ACTIVITIES" | jq '. + ["debugging"]')
-    fi
-
-    # Learning activity: research tools used
     if grep -qi "WebSearch\|WebFetch" "$TRANSCRIPT_PATH" 2>/dev/null; then
         ACTIVITIES=$(echo "$ACTIVITIES" | jq '. + ["learning"]')
     fi
 
-    # Architecture activity: new directories or major structural changes
-    if grep -qi "mkdir\|Write.*\.md\|create.*directory" "$TRANSCRIPT_PATH" 2>/dev/null; then
-        ACTIVITIES=$(echo "$ACTIVITIES" | jq '. + ["architecture"]')
-    fi
-
-    # Refactoring activity: Edit tool used heavily
-    EDIT_COUNT=$(grep -c '"name":"Edit"' "$TRANSCRIPT_PATH" 2>/dev/null || echo "0")
-    if [ "$EDIT_COUNT" -gt 5 ]; then
-        ACTIVITIES=$(echo "$ACTIVITIES" | jq '. + ["refactoring"]')
+    if [ "$ERRORS" -gt 0 ]; then
+        ACTIVITIES=$(echo "$ACTIVITIES" | jq '. + ["debugging"]')
     fi
 fi
 

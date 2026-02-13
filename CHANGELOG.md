@@ -8,16 +8,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- ✅ PostToolUse hook for real-time tool activity logging
+- ✅ Tool activity log (`.tool-activity-{session-id}.jsonl`) with detailed tool usage timeline
 - ✅ Auto-generated session statistics (conversation turns, tool calls, errors)
 - ✅ Transcript parsing library for extracting conversation context
 - ✅ Session stats section in session files
 - ✅ Enhanced PreCompact hook with recent conversation context
 - ✅ Files in focus tracking during compaction events
 - ✅ Session summarization skill (`/session-memory:summarize`) with auto-mode
-- ✅ Activity detection system (testing, debugging, learning, architecture, refactoring)
+- ✅ Activity detection system using PostToolUse data (testing, debugging, learning, architecture, refactoring)
 - ✅ Session consolidation skill (`/session-memory:consolidate`) for topic file updates
-- ✅ Topic file auto-population (testing.md, debugging.md, learnings.md, architecture.md, patterns.md)
-- ✅ Complete auto-workflow: Stop → Summarize → Consolidate (fully automatic)
+- ✅ Topic file auto-population with rich data from tool activity logs
+  - testing.md - Exact test commands with timestamps
+  - debugging.md - Error tracking and solutions
+  - learnings.md - Research timeline with search queries and URLs
+  - architecture.md - File creation timeline
+  - patterns.md - Edit history and refactoring patterns
+- ✅ Complete auto-workflow: PostToolUse → Stop → Summarize → Consolidate (fully automatic)
 - ✅ Auto-check behavior in MEMORY.md for triggering summarization and consolidation
 
 ### Changed
