@@ -5,10 +5,13 @@ Automatic session memory tracking with YAML frontmatter and searchable history.
 ## Features
 
 - 📝 **Automatic session tracking** - Stop and SessionEnd hooks capture session details
+- 🤖 **AI auto-summarization** - Claude automatically summarizes sessions after each conversation
+- 📚 **Smart consolidation** - Extracts learnings to topic files (testing.md, debugging.md, etc.)
 - 🏷️ **YAML frontmatter** - Structured metadata for easy searching
-- 🔍 **Session search** - `/session-memory:session-search` skill to find past sessions
-- 🧠 **Memory consolidation** - `/session-memory:memory-consolidate` skill to extract learnings
-- 📊 **Auto memory integration** - Works with Claude Code's auto memory system
+- 🔍 **Activity detection** - Automatically identifies testing, debugging, learning, architecture, refactoring
+- 📊 **Session statistics** - Tracks conversation turns, tool usage, errors
+- 🧠 **Memory integration** - Works with Claude Code's auto memory system (200-line MEMORY.md)
+- 🔗 **Context preservation** - PreCompact hook prevents context loss during compaction
 
 ## Installation
 
@@ -51,10 +54,73 @@ claude
 Then check for the skills:
 ```
 /session-memory:session-search
+/session-memory:summarize
+/session-memory:consolidate
 /session-memory:memory-consolidate
 ```
 
 ## How It Works
+
+### Complete Auto-Workflow
+
+The plugin operates completely automatically after installation:
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Claude
+    participant Stop Hook
+    participant Summarize
+    participant Consolidate
+
+    User->>Claude: Has conversation
+    Claude->>User: Responds
+    Claude->>Stop Hook: Triggers after response
+    Stop Hook->>Stop Hook: Detects activities (testing, debugging, etc.)
+    Stop Hook->>Stop Hook: Extracts conversation stats
+    Stop Hook->>Stop Hook: Sets needs_summary + needs_consolidation
+    Stop Hook->>Session File: Creates/updates with metadata
+    User->>Claude: Next message
+    Claude->>Summarize: Auto-checks needs_summary: true
+    Summarize->>Summarize: Reads transcript
+    Summarize->>Summarize: Generates AI summaries
+    Summarize->>Session File: Updates with summaries
+    Claude->>Consolidate: Auto-checks needs_consolidation: true
+    Consolidate->>Consolidate: Reads activities_detected
+    Consolidate->>Topic Files: Appends to testing.md, debugging.md, etc.
+    Consolidate->>Session File: Sets needs_consolidation: false
+    Claude->>User: Normal response (all processing done)
+```
+
+**Step 1: Stop Hook (Automatic)**
+- Runs after every Claude response
+- Creates session file with YAML frontmatter
+- Detects activities: testing, debugging, learning, architecture, refactoring
+- Extracts stats: conversation turns, tool calls, errors
+- Sets flags: `needs_summary: true`, `needs_consolidation: true`
+
+**Step 2: Auto-Summarization (Automatic)**
+- Claude checks for `needs_summary: true` on next response
+- Automatically invokes `/session-memory:summarize`
+- Reads conversation transcript
+- Generates AI summaries: Summary, Work Done, Decisions Made, Next Steps
+- Updates session file, sets `needs_summary: false`
+
+**Step 3: Auto-Consolidation (Automatic)**
+- Claude checks for `needs_consolidation: true` after summarization
+- Automatically invokes `/session-memory:consolidate`
+- Reads `activities_detected` from session
+- For each activity, extracts and appends to topic files:
+  - **testing.md** - Test runs, results, lessons
+  - **debugging.md** - Errors, solutions, prevention
+  - **learnings.md** - Research, discoveries, insights
+  - **architecture.md** - New components, design decisions
+  - **patterns.md** - Code patterns, refactoring approaches
+- Sets `needs_consolidation: false`
+
+**Result:** Every session is automatically documented, summarized, and consolidated into a searchable knowledge base with zero manual effort.
+
+## Hook System
 
 ### Stop Hook
 - Runs when Claude finishes responding
@@ -112,7 +178,9 @@ Each session file includes YAML frontmatter with:
 | `tool_calls`           | Number of tool invocations                     |
 | `errors_encountered`   | Failed operations count                        |
 | `tools_used`           | Comma-separated list of tools                  |
+| `activities_detected`  | Activities for consolidation (testing, debugging, etc.) |
 | `needs_summary`        | Whether auto-summarization is pending          |
+| `needs_consolidation`  | Whether topic file consolidation is pending    |
 | `end_reason`           | Why session ended (clear, logout, etc.)        |
 
 ## Skills
@@ -156,6 +224,36 @@ Search sessions by:
 - Notes (additional context)
 
 All summaries are inserted directly into the session file, replacing placeholder comments.
+
+### `/session-memory:consolidate`
+
+**Auto-extracts learnings** from sessions into topic files based on detected activities.
+
+**Automatic Mode (Default):**
+- Runs automatically after session summarization
+- Checks for `needs_consolidation: true` and `activities_detected` in YAML
+- Updates relevant topic files without prompting
+
+**Manual Mode:**
+```
+/session-memory:consolidate              # Consolidate current session
+/session-memory:consolidate <session-id> # Consolidate specific session
+```
+
+**Activity Detection:**
+- `testing` → Updates **testing.md** (test runs, results, lessons)
+- `debugging` → Updates **debugging.md** (errors, solutions, prevention)
+- `learning` → Updates **learnings.md** (research, discoveries, insights)
+- `architecture` → Updates **architecture.md** (new components, design decisions)
+- `refactoring` → Updates **patterns.md** (code patterns, best practices)
+
+**Topic Files Location:** `~/.claude/projects/{project}/memory/*.md`
+
+Each entry includes:
+- Timestamp and brief description
+- Relevant context and code snippets
+- Key takeaways and lessons
+- Link back to full session
 
 ### `/session-memory:memory-consolidate`
 

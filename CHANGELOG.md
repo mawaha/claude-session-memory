@@ -13,12 +13,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ✅ Session stats section in session files
 - ✅ Enhanced PreCompact hook with recent conversation context
 - ✅ Files in focus tracking during compaction events
-- ✅ Session summarization skill (`/session-memory:summarize`)
+- ✅ Session summarization skill (`/session-memory:summarize`) with auto-mode
+- ✅ Activity detection system (testing, debugging, learning, architecture, refactoring)
+- ✅ Session consolidation skill (`/session-memory:consolidate`) for topic file updates
+- ✅ Topic file auto-population (testing.md, debugging.md, learnings.md, architecture.md, patterns.md)
+- ✅ Complete auto-workflow: Stop → Summarize → Consolidate (fully automatic)
+- ✅ Auto-check behavior in MEMORY.md for triggering summarization and consolidation
 
 ### Changed
-- Enhanced YAML frontmatter with conversation_turns, tool_calls, errors_encountered, tools_used
+- Enhanced YAML frontmatter with conversation_turns, tool_calls, errors_encountered, tools_used, activities_detected, needs_summary, needs_consolidation
 - PreCompact hook now captures last 5 conversation turns and files being discussed
+- Stop hook detects activities and sets consolidation flags
 - Stop hook extracts stats from transcript for automatic session documentation
+- Auto-workflow now includes three phases: detection, summarization, consolidation
 
 ### Fixed
 - get_yaml_field function now correctly parses YAML frontmatter fields

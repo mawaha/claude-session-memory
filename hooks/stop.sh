@@ -71,6 +71,37 @@ TOOL_CALLS=$(echo "$TRANSCRIPT_STATS" | jq -r '.tool_calls // 0')
 ERRORS=$(echo "$TRANSCRIPT_STATS" | jq -r '.errors // 0')
 TOOLS_USED=$(echo "$TRANSCRIPT_STATS" | jq -r '.tools_used // ""')
 
+# Detect activities for topic file consolidation
+ACTIVITIES="[]"
+
+# Testing activity: test commands found in transcript
+if [ -f "$TRANSCRIPT_PATH" ]; then
+    if grep -qi "pytest\|bats\|npm test\|npm run test\|make test\|cargo test\|go test\|jest" "$TRANSCRIPT_PATH" 2>/dev/null; then
+        ACTIVITIES=$(echo "$ACTIVITIES" | jq '. + ["testing"]')
+    fi
+
+    # Debugging activity: errors were encountered
+    if [ "$ERRORS" -gt 0 ]; then
+        ACTIVITIES=$(echo "$ACTIVITIES" | jq '. + ["debugging"]')
+    fi
+
+    # Learning activity: research tools used
+    if grep -qi "WebSearch\|WebFetch" "$TRANSCRIPT_PATH" 2>/dev/null; then
+        ACTIVITIES=$(echo "$ACTIVITIES" | jq '. + ["learning"]')
+    fi
+
+    # Architecture activity: new directories or major structural changes
+    if grep -qi "mkdir\|Write.*\.md\|create.*directory" "$TRANSCRIPT_PATH" 2>/dev/null; then
+        ACTIVITIES=$(echo "$ACTIVITIES" | jq '. + ["architecture"]')
+    fi
+
+    # Refactoring activity: Edit tool used heavily
+    EDIT_COUNT=$(grep -c '"name":"Edit"' "$TRANSCRIPT_PATH" 2>/dev/null || echo "0")
+    if [ "$EDIT_COUNT" -gt 5 ]; then
+        ACTIVITIES=$(echo "$ACTIVITIES" | jq '. + ["refactoring"]')
+    fi
+fi
+
 # Check if session file exists
 if [ ! -f "$SESSION_FILE" ]; then
     # Create new session file
@@ -91,7 +122,9 @@ conversation_turns: $TURN_COUNT
 tool_calls: $TOOL_CALLS
 errors_encountered: $ERRORS
 tools_used: "$TOOLS_USED"
+activities_detected: $ACTIVITIES
 needs_summary: true
+needs_consolidation: true
 ---
 
 # Session: $TIMESTAMP
