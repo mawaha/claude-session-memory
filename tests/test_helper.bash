@@ -87,7 +87,7 @@ assert_file_exists() {
 assert_file_contains() {
     local file="$1"
     local text="$2"
-    if ! grep -qF "$text" "$file"; then
+    if ! grep -qF -- "$text" "$file"; then
         echo "File does not contain expected text: $text" >&2
         echo "File contents:" >&2
         cat "$file" >&2

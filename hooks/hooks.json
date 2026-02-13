@@ -13,6 +13,18 @@
         ]
       }
     ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/precompact.sh",
+            "timeout": 10,
+            "statusMessage": "Saving pre-compaction state..."
+          }
+        ]
+      }
+    ],
     "SessionEnd": [
       {
         "hooks": [
