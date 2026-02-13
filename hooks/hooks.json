@@ -1,0 +1,29 @@
+{
+  "description": "Session memory tracking hooks",
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/stop.sh",
+            "timeout": 30,
+            "statusMessage": "Saving session memory..."
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/session-end.sh",
+            "timeout": 10,
+            "statusMessage": "Finalizing session..."
+          }
+        ]
+      }
+    ]
+  }
+}
