@@ -7,7 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-Nothing yet - see [1.0.0] for the initial release
+### Added
+- ✅ Auto-generated session statistics (conversation turns, tool calls, errors)
+- ✅ Transcript parsing library for extracting conversation context
+- ✅ Session stats section in session files
+- ✅ Enhanced PreCompact hook with recent conversation context
+- ✅ Files in focus tracking during compaction events
+- ✅ Session summarization skill (`/session-memory:summarize`)
+
+### Changed
+- Enhanced YAML frontmatter with conversation_turns, tool_calls, errors_encountered, tools_used
+- PreCompact hook now captures last 5 conversation turns and files being discussed
+- Stop hook extracts stats from transcript for automatic session documentation
+
+### Fixed
+- get_yaml_field function now correctly parses YAML frontmatter fields
 
 ## [1.0.0] - 2026-02-13
 

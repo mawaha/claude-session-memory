@@ -1,6 +1,10 @@
 #!/bin/bash
 set -euo pipefail
 
+# Get script directory for sourcing libraries
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/lib/transcript-parser.sh"
+
 INPUT=$(cat)
 SESSION_ID=$(echo "$INPUT" | jq -r '.session_id')
 PROJECT_DIR=$(echo "$INPUT" | jq -r '.cwd')
@@ -60,6 +64,13 @@ if echo "$FILES_MODIFIED" | grep -qi "\.md$" 2>/dev/null; then
     TAGS=$(echo "$TAGS" | jq '. + ["documentation"]')
 fi
 
+# Extract transcript stats
+TRANSCRIPT_STATS=$(extract_transcript_stats "$TRANSCRIPT_PATH")
+TURN_COUNT=$(echo "$TRANSCRIPT_STATS" | jq -r '.turn_count // 0')
+TOOL_CALLS=$(echo "$TRANSCRIPT_STATS" | jq -r '.tool_calls // 0')
+ERRORS=$(echo "$TRANSCRIPT_STATS" | jq -r '.errors // 0')
+TOOLS_USED=$(echo "$TRANSCRIPT_STATS" | jq -r '.tools_used // ""')
+
 # Check if session file exists
 if [ ! -f "$SESSION_FILE" ]; then
     # Create new session file
@@ -76,12 +87,23 @@ permission_mode: $PERMISSION_MODE
 status: in_progress
 tags: $TAGS
 transcript: $TRANSCRIPT_PATH
+conversation_turns: $TURN_COUNT
+tool_calls: $TOOL_CALLS
+errors_encountered: $ERRORS
+tools_used: "$TOOLS_USED"
 ---
 
 # Session: $TIMESTAMP
 
 ## Summary
 <!-- Add a one-line summary of what was accomplished -->
+<!-- Or run /session-memory:summarize to auto-generate -->
+
+## Session Stats
+- **Conversation turns:** $TURN_COUNT
+- **Tool calls:** $TOOL_CALLS
+- **Errors encountered:** $ERRORS
+- **Tools used:** $TOOLS_USED
 
 ## Work Done
 <!-- Key accomplishments and changes made -->

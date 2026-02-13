@@ -122,7 +122,10 @@ get_yaml_field() {
     local file="$1"
     local field="$2"
 
-    awk -v field="$field:" '/^---$/,/^---$/ {if ($1 == field) {$1=""; print substr($0,2)}}' "$file" | head -1
+    awk -v field="$field:" '
+        /^---$/ { in_yaml++; next }
+        in_yaml == 1 && $1 == field { $1=""; sub(/^ +/, ""); print; exit }
+    ' "$file"
 }
 
 # Create test files for modification tracking
