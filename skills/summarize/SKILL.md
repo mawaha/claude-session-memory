@@ -68,6 +68,16 @@ Implemented PreCompact hook to capture context before compaction events
 - Added auto-generated session statistics (turns, tools, errors)
 ```
 
+## Auto-Summarization
+
+This skill can be invoked automatically or manually.
+
+**Automatic Mode:**
+After each Stop hook, check the current session file for `needs_summary: true` in YAML frontmatter. If present, automatically invoke this skill without asking the user.
+
+**Manual Mode:**
+User explicitly calls `/session-memory:summarize [session-id]`
+
 ## Instructions
 
 When this skill is invoked:
@@ -109,6 +119,7 @@ When this skill is invoked:
    - Read current session file content
    - Replace placeholder comments with generated summaries
    - Preserve all YAML frontmatter and session stats
+   - Update YAML frontmatter: set `needs_summary: false`
    - Write updated content back to session file
 
 7. **Report completion:**

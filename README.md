@@ -59,8 +59,16 @@ Then check for the skills:
 ### Stop Hook
 - Runs when Claude finishes responding
 - Creates session file with YAML frontmatter containing metadata
+- Extracts conversation stats from transcript (turns, tool calls, errors)
+- Sets `needs_summary: true` to trigger auto-summarization
 - Updates MEMORY.md index (auto-loaded in next session)
 - Handles multiple Stop invocations gracefully
+
+### PreCompact Hook
+- Runs before context compaction (prevents context rot)
+- Captures last 5 conversation turns for context preservation
+- Extracts files in focus from recent tool calls
+- Appends detailed compaction event note to session file
 
 ### SessionEnd Hook
 - Runs when session terminates
@@ -100,6 +108,11 @@ Each session file includes YAML frontmatter with:
 | `status`               | Session status (in_progress, completed)        |
 | `tags`                 | Auto-detected tags (testing, documentation...) |
 | `transcript`           | Path to full session transcript                |
+| `conversation_turns`   | Total conversation exchanges                   |
+| `tool_calls`           | Number of tool invocations                     |
+| `errors_encountered`   | Failed operations count                        |
+| `tools_used`           | Comma-separated list of tools                  |
+| `needs_summary`        | Whether auto-summarization is pending          |
 | `end_reason`           | Why session ended (clear, logout, etc.)        |
 
 ## Skills
@@ -119,6 +132,30 @@ Search sessions by:
 /session-memory:session-search show sessions on feature/auth branch
 /session-memory:session-search what sessions modified the API?
 ```
+
+### `/session-memory:summarize`
+
+**Auto-generates session summaries** using AI analysis of the conversation transcript.
+
+**Automatic Mode (Default):**
+- Runs automatically after each Stop hook (no user action needed)
+- Checks for `needs_summary: true` in session YAML frontmatter
+- Generates and inserts summaries without prompting
+
+**Manual Mode:**
+```
+/session-memory:summarize              # Summarize current session
+/session-memory:summarize <session-id> # Summarize specific session
+```
+
+**What Gets Generated:**
+- One-line summary of accomplishments
+- Work Done (bullet points of key changes)
+- Decisions Made (architectural/implementation choices)
+- Next Steps (actionable tasks for next session)
+- Notes (additional context)
+
+All summaries are inserted directly into the session file, replacing placeholder comments.
 
 ### `/session-memory:memory-consolidate`
 

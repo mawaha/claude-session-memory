@@ -91,6 +91,7 @@ conversation_turns: $TURN_COUNT
 tool_calls: $TOOL_CALLS
 errors_encountered: $ERRORS
 tools_used: "$TOOLS_USED"
+needs_summary: true
 ---
 
 # Session: $TIMESTAMP
